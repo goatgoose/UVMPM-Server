@@ -24,5 +24,5 @@ class Auth:
         auth_info[username] = password
 
         auth_file = open(self.auth_file_path, "w")
-        json.dump(auth_file)
+        json.dump(auth_info, auth_file, indent=4, sort_keys=True)
         auth_file.close()

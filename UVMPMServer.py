@@ -71,6 +71,7 @@ class UVMPMServer:
             split = data.split(":")
             if len(split) != 3:
                 self.send_message(sock, "Unrecognized message: " + data)
+                self.poller.modify(sock, select.POLLHUP)
                 return
 
             username = split[1]
@@ -87,11 +88,45 @@ class UVMPMServer:
         elif data == "LIST":
             if sock not in self.authorized_sockets:
                 self.send_message(sock, "Unauthorized.")
+                self.poller.modify(sock, select.POLLHUP)
                 return
 
             self.send_message(sock, ", ".join(self.authorized_clients.keys()))
+        elif data.startswith("To:"):
+            if sock not in self.authorized_sockets:
+                self.send_message(sock, "Unauthorized.")
+                self.poller.modify(sock, select.POLLHUP)
+                return
+
+            split = data.split(":")
+            if len(split) != 3:
+                self.send_message(sock, "Unrecognized message: " + data)
+                self.poller.modify(sock, select.POLLHUP)
+                return
+
+            send_to = split[1]
+            message = split[2]
+
+            send_to_sock = self.authorized_clients.get(send_to)
+            if not send_to_sock:
+                self.send_message(sock, "User doesn't exist: " + send_to)
+                return
+
+            self.send_message(send_to_sock, "From:" + self.get_user(sock) + ":" + message)
+        elif data == "BYE":
+            if sock not in self.authorized_sockets:
+                self.send_message(sock, "Unauthorized.")
+                self.poller.modify(sock, select.POLLHUP)
+                return
+
+            user = self.get_user(sock)
+            if user:
+                self.broadcast("SIGNOFF:" + user)
+                self.authorized_clients.pop(user)
+            self.authorized_sockets.remove(sock)
         else:
             self.send_message(sock, "Unrecognized message: " + data)
+            self.poller.modify(sock, select.POLLHUP)
 
     def send_message(self, sock, message):
         sock.send(message.encode())
@@ -102,6 +137,13 @@ class UVMPMServer:
         for user in self.authorized_clients:
             sock = self.authorized_clients[user]
             self.send_message(sock, message)
+
+    def get_user(self, sock):
+        # TODO double dictionary
+        for user in self.authorized_clients:
+            if sock == self.authorized_clients[user]:
+                return user
+        return None
 
 
 if __name__ == '__main__':
