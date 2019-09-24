@@ -51,6 +51,7 @@ class UVMPMServer:
 
                 elif event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
                     self.poller.unregister(fd)
+                    sock.send(b'')
                     sock.close()
                     del self.sockets[fd]
                     print(sock.fileno(), "disconnected")
