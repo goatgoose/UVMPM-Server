@@ -1,7 +1,7 @@
 import json
 
 
-class Auth:
+class Authorizer:
     def __init__(self, auth_file_path):
         self.auth_file_path = auth_file_path
 
@@ -11,7 +11,7 @@ class Auth:
         auth_file.close()
         return auth_dict
 
-    def authenticate(self, username, password):
+    def is_authorized(self, username, password):
         auth_info = self.get_auth_info()
         return auth_info.get(username, None) == password
 
