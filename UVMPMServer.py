@@ -49,15 +49,6 @@ class UVMPMServer:
 
                     self.handle_data(sock, incoming_data.decode("UTF-8"))
 
-                elif event & select.POLLOUT:
-                    data = self.data_to_send[sock]
-                    bytes_sent = sock.send(data)
-                    if bytes_sent < len(data):
-                        self.data_to_send[sock] = data[bytes_sent:]
-                    else:
-                        self.data_to_send[sock] = b''
-                        self.poller.modify(sock, select.POLLIN)
-
                 elif event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
                     self.poller.unregister(fd)
                     sock.close()
@@ -103,8 +94,8 @@ class UVMPMServer:
             self.send_message(sock, "Unrecognized message: " + data)
 
     def send_message(self, sock, message):
-        self.data_to_send[sock] = self.data_to_send.pop(sock, b'') + message.encode()
-        self.poller.modify(sock, select.POLLOUT)
+        sock.send(message.encode())
+        self.poller.modify(sock, select.POLLIN)
         print(sock.fileno(), "<-", message)
 
     def broadcast(self, message):
