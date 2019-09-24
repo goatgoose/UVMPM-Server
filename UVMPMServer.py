@@ -6,7 +6,7 @@ import select
 class UVMPMServer:
     BUFFER_SIZE = 4096
 
-    def __init__(self, host="0.0.0.0", port=1142):
+    def __init__(self, host="0.0.0.0", port=1148):
         self.host = host
         self.port = port
 
@@ -47,7 +47,10 @@ class UVMPMServer:
                         self.poller.modify(sock, select.POLLHUP)
                         continue
 
-                    self.handle_data(sock, incoming_data.decode("UTF-8"))
+                    try:
+                        self.handle_data(sock, incoming_data.decode("ascii").strip())
+                    except Exception:
+                        pass
 
                 elif event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
                     self.poller.unregister(fd)
@@ -72,7 +75,7 @@ class UVMPMServer:
             split = data.split(":")
             if len(split) != 3:
                 self.send_message(sock, "Unrecognized message: " + data)
-                self.poller.modify(sock, select.POLLHUP)
+                #self.poller.modify(sock, select.POLLHUP)
                 return
 
             username = split[1]
@@ -89,20 +92,20 @@ class UVMPMServer:
         elif data == "LIST":
             if sock not in self.authorized_sockets:
                 self.send_message(sock, "Unauthorized.")
-                self.poller.modify(sock, select.POLLHUP)
+                #self.poller.modify(sock, select.POLLHUP)
                 return
 
             self.send_message(sock, ", ".join(self.authorized_clients.keys()))
         elif data.startswith("To:"):
             if sock not in self.authorized_sockets:
                 self.send_message(sock, "Unauthorized.")
-                self.poller.modify(sock, select.POLLHUP)
+                #self.poller.modify(sock, select.POLLHUP)
                 return
 
             split = data.split(":")
             if len(split) != 3:
                 self.send_message(sock, "Unrecognized message: " + data)
-                self.poller.modify(sock, select.POLLHUP)
+                #self.poller.modify(sock, select.POLLHUP)
                 return
 
             send_to = split[1]
@@ -117,7 +120,7 @@ class UVMPMServer:
         elif data == "BYE":
             if sock not in self.authorized_sockets:
                 self.send_message(sock, "Unauthorized.")
-                self.poller.modify(sock, select.POLLHUP)
+                #self.poller.modify(sock, select.POLLHUP)
                 return
 
             user = self.get_user(sock)
@@ -125,13 +128,18 @@ class UVMPMServer:
                 self.broadcast("SIGNOFF:" + user)
                 self.authorized_clients.pop(user)
             self.authorized_sockets.remove(sock)
-            self.poller.modify(sock, select.POLLHUP)
+
+            self.poller.unregister(sock.fileno())
+            sock.send(b'')
+            sock.close()
+            del self.sockets[sock.fileno()]
         else:
             self.send_message(sock, "Unrecognized message: " + data)
-            self.poller.modify(sock, select.POLLHUP)
+            #self.poller.modify(sock, select.POLLHUP)
 
     def send_message(self, sock, message):
-        sock.send(message.encode())
+        message += "\n"
+        sock.send(message.encode("ascii"))
         self.poller.modify(sock, select.POLLIN)
         print(sock.fileno(), "<-", message)
 
