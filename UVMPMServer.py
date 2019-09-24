@@ -1,3 +1,4 @@
+from Auth import Auth
 import socket
 import select
 
@@ -9,12 +10,14 @@ class UVMPMServer:
         self.host = host
         self.port = port
 
+        self.auth = Auth("auth_info.json")
+
         self.listening_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listening_sock.bind((self.host, self.port))
 
         self.sockets = {}  # fileno : socket
-        self.unauthorized_sockets = {}  # fileno : sock
-        self.authorized_sockets = {}  # fileno : sock
+        self.unauthorized_sockets = set()
+        self.authorized_sockets = set()  # sockets
 
         self.authorized_clients = {}  # username : sock
 
@@ -55,16 +58,54 @@ class UVMPMServer:
                         self.data_to_send[sock] = b''
                         self.poller.modify(sock, select.POLLIN)
 
+                elif event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
+                    self.poller.unregister(fd)
+                    sock.close()
+                    del self.sockets[fd]
+                    print(sock.fileno(), "disconnected")
+
     def handle_data(self, sock, data):
         if data == "HELLO":
             self.send_message(sock, "HELLO")
+            if sock not in self.unauthorized_sockets.union(self.authorized_sockets):
+                self.unauthorized_sockets.add(sock)
+        elif data.startswith("AUTH:"):
+            if sock not in self.unauthorized_sockets:
+                self.send_message(sock, "Not yet greeted.")
+                return
+            elif sock in self.authorized_sockets:
+                self.send_message(sock, "Already logged in.")
+                return
+
+            split = data.split(":")
+            if len(split) != 3:
+                self.send_message(sock, "Unrecognized message: " + data)
+                return
+
+            username = split[1]
+            password = split[2]
+            if self.auth.authenticate(username, password):
+                self.unauthorized_sockets.remove(sock)
+                self.authorized_sockets.add(sock)
+                self.authorized_clients[username] = sock
+
+                self.send_message(sock, "AUTHYES")
+                self.broadcast("SIGNIN:" + username)
+            else:
+                self.send_message(sock, "AUTHNO")
+        elif data == "LIST":
+            if sock not in self.authorized_sockets:
+                self.send_message(sock, "Unauthorized.")
+                return
+
+            self.send_message(sock, ", ".join(self.authorized_clients.keys()))
         else:
-            self.send_message(sock, "Unrecognized message.")
+            self.send_message(sock, "Unrecognized message: " + data)
 
     def send_message(self, sock, message):
         self.data_to_send[sock] = self.data_to_send.pop(sock, b'') + message.encode()
         self.poller.modify(sock, select.POLLOUT)
-        print(sock.fileno, "<-", message)
+        print(sock.fileno(), "<-", message)
 
     def broadcast(self, message):
         for user in self.authorized_clients:
