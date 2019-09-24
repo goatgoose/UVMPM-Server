@@ -124,6 +124,7 @@ class UVMPMServer:
                 self.broadcast("SIGNOFF:" + user)
                 self.authorized_clients.pop(user)
             self.authorized_sockets.remove(sock)
+            self.poller.modify(sock, select.POLLHUP)
         else:
             self.send_message(sock, "Unrecognized message: " + data)
             self.poller.modify(sock, select.POLLHUP)
