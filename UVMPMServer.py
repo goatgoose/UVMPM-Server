@@ -2,13 +2,10 @@ from ClientManager import ClientManager
 from RequestHandler import RequestHandler
 import socket
 import select
+import config
 
 
 class UVMPMServer:
-    BUFFER_SIZE = 4096
-
-    MESSAGE_DELIMINATOR = "\n"
-
     def __init__(self, host="0.0.0.0", port=1145):
         self.host = host
         self.port = port
@@ -40,7 +37,12 @@ class UVMPMServer:
                     self.client_manager.create_client(sock)
 
                 elif event & select.POLLIN:
-                    incoming_data = sock.recv(self.BUFFER_SIZE)
+                    try:
+                        incoming_data = sock.recv(config.BUFFER_SIZE)
+                    except Exception:
+                        # connection reset, connection refused, etc
+                        continue
+
                     try:
                         decoded_data = incoming_data.decode("ascii")
                     except Exception:
@@ -53,7 +55,7 @@ class UVMPMServer:
 
                     self.client_manager.add_data(sock.fileno(), decoded_data)
 
-                    requests = self.client_manager.get_buffered_requests(sock.fileno())
+                    requests = self.client_manager.pop_buffered_requests(sock.fileno())
                     for request in requests:
                         self.request_handler.handle(request)
 

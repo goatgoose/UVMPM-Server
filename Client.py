@@ -15,14 +15,15 @@ class Client:
         self.last_interaction_time: time.time = time.time()
 
     def set_greeted(self):
-        self.state = State.UNAUTHORIZED
+        if self.state == State.NOT_GREETED:
+            self.state = State.UNAUTHORIZED
 
     def set_authorized(self, username):
         self.username = username
         self.state = State.AUTHORIZED
 
     def send_response(self, response: Response):
-        self.sock.sendall(response.message)
+        self.sock.send(response.message)
 
     def reset_interaction_timer(self):
         self.last_interaction_time = time.time()

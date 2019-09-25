@@ -1,18 +1,18 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
-from UVMPMServer import UVMPMServer
+import config
 
 
 class Response:
     __metaclass__ = ABCMeta
 
-    @abstractmethod
     @property
+    @abstractmethod
     def _message(self):
         pass
 
     @property
     def message(self):
-        message_ = self._message + UVMPMServer.MESSAGE_DELIMINATOR
+        message_ = self._message + config.MESSAGE_DELIMINATOR
         print(message_)
         return message_.encode("ascii")
 

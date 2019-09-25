@@ -3,7 +3,7 @@ from Authorizer import Authorizer
 from typing import Dict
 import socket
 import select
-from Response import Response
+from Response import Response, SignOff
 from RequestManager import RequestManager
 import time
 from threading import Timer
@@ -68,8 +68,10 @@ class ClientManager:
     def remove_idle_clients_forever(self):
         now = time.time()
         for client in list(self.clients.values()):
+            print(now - client.last_interaction_time)
             if now - client.last_interaction_time > ClientManager.TIMEOUT:
                 self.remove_client(client)
+                self.broadcast(SignOff(client.username))
                 print("removing", str(client), "due to inactivity")
 
         Timer(10, self.remove_idle_clients_forever).start()
@@ -79,7 +81,7 @@ class ClientManager:
             self.buffered_data[fileno] = ""
         self.buffered_data[fileno] += data
 
-    def get_buffered_requests(self, fileno: int):
+    def pop_buffered_requests(self, fileno: int):
         raw_messages = self.buffered_data.get(fileno)
         if not raw_messages:
             return None
@@ -89,5 +91,7 @@ class ClientManager:
         requests = []
         for raw_message in raw_messages:
             requests.append(self.request_manager.get_request(self.clients.get(fileno), raw_message))
+
+        self.buffered_data[fileno] = split[-1]
 
         return requests

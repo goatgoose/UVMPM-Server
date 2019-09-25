@@ -19,6 +19,7 @@ class RequestHandler:
 
     def handle(self, request: Request):
         print(str(request.client), request.raw_request)
+        request.client.reset_interaction_timer()
         self.request_function_map.get(request.__class__)(request)
 
     def _on_handshake(self, request: Request.Handshake):
