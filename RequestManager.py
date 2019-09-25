@@ -18,10 +18,10 @@ class RequestManager:
             raw_request = request_bytes.decode("ascii").strip()
         except Exception:
             # Unable to convert to ascii
-            return None
+            return Unknown(client, None)
 
         for request_class in self.requests:
             if request_class.is_of_type(raw_request):
                 return request_class(client, raw_request)
 
-        return None
+        return Unknown(client, None)

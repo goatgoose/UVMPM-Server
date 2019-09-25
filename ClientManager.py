@@ -20,7 +20,7 @@ class ClientManager:
     def client_exists(self, sock: socket.socket):
         return sock.fileno() in self.clients
 
-    def create_client(self, sock):
+    def create_client(self, sock: socket.socket):
         if self.client_exists(sock):
             return
 
@@ -32,17 +32,17 @@ class ClientManager:
 
         print(str(client), "connected.")
 
-    def login_client(self, client, username):
+    def login_client(self, client: Client, username: str):
         self.authorized_clients[username] = client
-        client.set_authorized()
+        client.set_authorized(username)
 
         print(str(client), "authorized.")
 
-    def remove_client(self, client):
-        self.clients.pop(client.socket.fileno(), None)
+    def remove_client(self, client: Client):
+        self.clients.pop(client.sock.fileno(), None)
         if client.username:
-            self.clients.pop(client.username, None)
-        self.sockets.pop(client.socket.fileno(), None)
+            self.authorized_clients.pop(client.username, None)
+        self.sockets.pop(client.sock.fileno(), None)
         self.poller.unregister(client.sock.fileno())
 
         client.sock.send(b'')

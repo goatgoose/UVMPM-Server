@@ -23,12 +23,12 @@ class Client:
 
     def __str__(self):
         if self.username:
-            return self.username + str(self.sock.fileno())
+            return self.username + " (" + str(self.sock.fileno()) + ")"
         else:
             return str(self.sock.fileno())
 
 
 class State(Enum):
-    NOT_GREETED = auto
-    UNAUTHORIZED = auto
-    AUTHORIZED = auto
+    NOT_GREETED = auto()
+    UNAUTHORIZED = auto()
+    AUTHORIZED = auto()

@@ -18,7 +18,7 @@ class Request:
 
 class Handshake(Request):
     def __init__(self, client: Client, raw_request: str):
-        super(Request).__init__(client, raw_request)
+        super().__init__(client, raw_request)
 
     @staticmethod
     def is_of_type(to_match: str):
@@ -27,7 +27,7 @@ class Handshake(Request):
 
 class Authentication(Request):
     def __init__(self, client: Client, raw_request: str):
-        super(Request).__init__(client, raw_request)
+        super().__init__(client, raw_request)
 
         split = self.raw_request.split(":")
         if len(split) != 3:
@@ -43,7 +43,7 @@ class Authentication(Request):
 
 class ListUsers(Request):
     def __init__(self, client: Client, raw_request: str):
-        super(Request).__init__(client, raw_request)
+        super().__init__(client, raw_request)
 
     @staticmethod
     def is_of_type(to_match: str):
@@ -52,7 +52,7 @@ class ListUsers(Request):
 
 class SendMessage(Request):
     def __init__(self, client: Client, raw_request: str):
-        super(Request).__init__(client, raw_request)
+        super().__init__(client, raw_request)
 
         split = self.raw_request.split(":")
         if len(split) != 3:
@@ -68,7 +68,7 @@ class SendMessage(Request):
 
 class Logout(Request):
     def __init__(self, client: Client, raw_request: str):
-        super(Request).__init__(client, raw_request)
+        super().__init__(client, raw_request)
 
     @staticmethod
     def is_of_type(to_match: str):
@@ -77,7 +77,7 @@ class Logout(Request):
 
 class Unknown(Request):
     def __init__(self, client: Client, raw_request: str):
-        super(Request).__init__(client, raw_request)
+        super().__init__(client, raw_request)
 
     @staticmethod
     def is_of_type(to_match: str):

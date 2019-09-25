@@ -8,7 +8,7 @@ import select
 class UVMPMServer:
     BUFFER_SIZE = 4096
 
-    def __init__(self, host="0.0.0.0", port=1143):
+    def __init__(self, host="0.0.0.0", port=1145):
         self.host = host
         self.port = port
 

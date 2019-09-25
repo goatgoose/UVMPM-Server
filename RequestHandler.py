@@ -25,7 +25,12 @@ class RequestHandler:
         request.client.send_response(Response.Ack())
 
     def _on_authentication(self, request: Request.Authentication):
-        if request.client.state == Client.State.AUTHORIZED:
+        if request.client.state == Client.State.NOT_GREETED:
+            request.client.send_response(Response.AuthNo())
+            return
+
+        existing_user = self.client_manager.authorized_clients.get(request.username)
+        if existing_user:
             request.client.send_response(Response.UserExists())
             return
 
@@ -56,6 +61,10 @@ class RequestHandler:
 
     def _on_logout(self, request: Request.Logout):
         self.client_manager.remove_client(request.client)
+        if request.client.username:
+            self.client_manager.broadcast(Response.SignOff(request.client.username))
 
     def _on_unknown(self, request: Request.Unknown):
-        pass
+        self.client_manager.remove_client(request.client)
+        if request.client.username:
+            self.client_manager.broadcast(Response.SignOff(request.client.username))
