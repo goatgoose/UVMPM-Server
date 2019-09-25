@@ -2,6 +2,7 @@ from enum import Enum, auto
 import socket
 from typing import Dict
 from Response import Response
+import time
 
 
 class Client:
@@ -10,6 +11,8 @@ class Client:
         self.state = State.NOT_GREETED
 
         self.username: str = None
+
+        self.last_interaction_time: time.time = time.time()
 
     def set_greeted(self):
         self.state = State.UNAUTHORIZED
@@ -20,6 +23,9 @@ class Client:
 
     def send_response(self, response: Response):
         self.sock.send(response.message)
+
+    def reset_interaction_timer(self):
+        self.last_interaction_time = time.time()
 
     def __str__(self):
         if self.username:

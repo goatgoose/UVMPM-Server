@@ -30,7 +30,10 @@ class UVMPMServer:
 
         while True:
             for fd, event in self.client_manager.poller.poll():
-                sock = self.client_manager.sockets[fd]
+                sock = self.client_manager.sockets.get(fd, None)
+                if not sock:
+                    continue
+
                 if sock is self.listening_socket:
                     sock, address = self.listening_socket.accept()
                     sock.setblocking(False)

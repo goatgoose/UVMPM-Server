@@ -4,6 +4,8 @@ from typing import Dict
 import socket
 import select
 from Response import Response
+import time
+from threading import Timer
 
 
 class ClientManager:
@@ -16,6 +18,8 @@ class ClientManager:
         self.authorized_clients: Dict[str, Client] = {}  # username : client
 
         self.poller = select.poll()
+
+        self.remove_idle_clients_forever()
 
     def client_exists(self, sock: socket.socket):
         return sock.fileno() in self.clients
@@ -53,3 +57,13 @@ class ClientManager:
     def broadcast(self, response: Response):
         for client in self.authorized_clients.values():
             client.send_response(response)
+
+    def remove_idle_clients_forever(self):
+        now = time.time()
+        for client in list(self.clients.values()):
+            print(now - client.last_interaction_time)
+            if now - client.last_interaction_time > 120:
+                self.remove_client(client)
+                print("removing", str(client), "due to inactivity")
+
+        Timer(10, self.remove_idle_clients_forever).start()
