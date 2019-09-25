@@ -1,5 +1,4 @@
 from ClientManager import ClientManager
-from RequestManager import RequestManager
 from RequestHandler import RequestHandler
 import socket
 import select
@@ -8,12 +7,13 @@ import select
 class UVMPMServer:
     BUFFER_SIZE = 4096
 
+    MESSAGE_DELIMINATOR = "\n"
+
     def __init__(self, host="0.0.0.0", port=1145):
         self.host = host
         self.port = port
 
         self.client_manager = ClientManager()
-        self.request_manager = RequestManager()
 
         self.request_handler = RequestHandler(self.client_manager)
 
@@ -41,13 +41,21 @@ class UVMPMServer:
 
                 elif event & select.POLLIN:
                     incoming_data = sock.recv(self.BUFFER_SIZE)
+                    try:
+                        decoded_data = incoming_data.decode("ascii")
+                    except Exception:
+                        # unable to convert to ascii
+                        continue
+
                     if len(incoming_data) == 0:
                         self.client_manager.poller.modify(sock, select.POLLHUP)
                         continue
 
-                    client = self.client_manager.clients.get(sock.fileno())
-                    request = self.request_manager.get_request(client, incoming_data)
-                    self.request_handler.handle(request)
+                    self.client_manager.add_data(sock.fileno(), decoded_data)
+
+                    requests = self.client_manager.get_buffered_requests(sock.fileno())
+                    for request in requests:
+                        self.request_handler.handle(request)
 
                 elif event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
                     client = self.client_manager.clients.get(sock.fileno())

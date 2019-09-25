@@ -4,6 +4,7 @@ from typing import Dict
 import socket
 import select
 from Response import Response
+from RequestManager import RequestManager
 import time
 from threading import Timer
 
@@ -13,6 +14,8 @@ class ClientManager:
 
     def __init__(self):
         self.authorizer = Authorizer("auth_info.json")
+
+        self.request_manager = RequestManager()
 
         self.sockets: Dict[int, socket.socket] = {}  # fileno : sock
 
@@ -51,6 +54,7 @@ class ClientManager:
         if client.username:
             self.authorized_clients.pop(client.username, None)
         self.sockets.pop(client.sock.fileno(), None)
+        self.buffered_data.pop(client.sock.fileno(), None)
         self.poller.unregister(client.sock.fileno())
 
         client.sock.close()
@@ -69,3 +73,21 @@ class ClientManager:
                 print("removing", str(client), "due to inactivity")
 
         Timer(10, self.remove_idle_clients_forever).start()
+
+    def add_data(self, fileno, data):
+        if fileno not in self.buffered_data:
+            self.buffered_data[fileno] = ""
+        self.buffered_data[fileno] += data
+
+    def get_buffered_requests(self, fileno: int):
+        raw_messages = self.buffered_data.get(fileno)
+        if not raw_messages:
+            return None
+
+        split = raw_messages.split("\n")
+        raw_messages = split[:-1]
+        requests = []
+        for raw_message in raw_messages:
+            requests.append(self.request_manager.get_request(self.clients.get(fileno), raw_message))
+
+        return requests

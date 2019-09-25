@@ -13,12 +13,8 @@ class RequestManager:
             Unknown
         ]
 
-    def get_request(self, client: Client, request_bytes: bytes):
-        try:
-            raw_request = request_bytes.decode("ascii").strip()
-        except Exception:
-            # Unable to convert to ascii
-            return Unknown(client, None)
+    def get_request(self, client: Client, raw_request: str):
+        raw_request = raw_request.strip()
 
         for request_class in self.requests:
             if request_class.is_of_type(raw_request):
