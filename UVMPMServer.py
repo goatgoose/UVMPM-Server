@@ -1,4 +1,6 @@
-from ConnectionManager import ConnectionManager
+from ClientManager import ClientManager
+from RequestManager import RequestManager
+from RequestHandler import RequestHandler
 import socket
 import select
 
@@ -10,41 +12,40 @@ class UVMPMServer:
         self.host = host
         self.port = port
 
-        self.connection_manager = ConnectionManager()
+        self.client_manager = ClientManager()
+        self.request_manager = RequestManager()
+
+        self.request_handler = RequestHandler(self.client_manager)
 
         self.listening_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listening_socket.bind((self.host, self.port))
 
-        self.poller = select.poll()
-        self.poller.register(self.listening_socket, select.POLLIN)
-
-        self.sockets = {}  # fileno : socket
+        self.client_manager.poller.register(self.listening_socket, select.POLLIN)
 
     def run(self):
         self.listening_socket.listen()
         print("Listening on port", self.port)
 
-        self.sockets[self.listening_socket.fileno()] = self.listening_socket
+        self.client_manager.sockets[self.listening_socket.fileno()] = self.listening_socket
 
         while True:
-            for fd, event in self.poller.poll():
-                sock = self.sockets[fd]
+            for fd, event in self.client_manager.poller.poll():
+                sock = self.client_manager.sockets[fd]
                 if sock is self.listening_socket:
                     sock, address = self.listening_socket.accept()
                     sock.setblocking(False)
-                    self.sockets[sock.fileno()] = sock
-                    self.poller.register(sock, select.POLLIN)
+                    self.client_manager.create_client(sock)
 
                 elif event & select.POLLIN:
                     incoming_data = sock.recv(self.BUFFER_SIZE)
                     if len(incoming_data) == 0:
-                        self.poller.modify(sock, select.POLLHUP)
+                        self.client_manager.poller.modify(sock, select.POLLHUP)
                         continue
 
-                    try:
-                        self.handle_data(sock, incoming_data.decode("ascii").strip())
-                    except Exception:
-                        pass
+                    client = self.client_manager.clients.get(sock.fileno())
+                    request = self.request_manager.get_request(client, incoming_data)
+                    self.request_handler.handle(request)
 
                 elif event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
-                    self.disconnect(sock)
+                    client = self.client_manager.clients.get(sock.fileno())
+                    self.client_manager.remove_client(client)

@@ -1,37 +1,33 @@
 from abc import ABCMeta, abstractmethod
 from UVMPMException import InvalidRequestSyntax
+from Client import Client
 
 
 class Request:
     __metaclass__ = ABCMeta
 
-    def __init__(self, raw_request: str):
+    def __init__(self, client: Client, raw_request: str):
+        self.client = client
         self.raw_request = raw_request
 
+    @staticmethod
     @abstractmethod
-    def is_of_type(self, to_match: str):
+    def is_of_type(to_match: str):
         pass
 
 
-class Unknown(Request):
-    def __init__(self, raw_request: str):
-        super(Request).__init__(raw_request)
-
-    def is_of_type(self, to_match: str):
-        return True
-
-
 class Handshake(Request):
-    def __init__(self, raw_request: str):
-        super(Request).__init__(raw_request)
+    def __init__(self, client: Client, raw_request: str):
+        super(Request).__init__(client, raw_request)
 
-    def is_of_type(self, to_match: str):
+    @staticmethod
+    def is_of_type(to_match: str):
         return to_match == "HELLO"
 
 
 class Authentication(Request):
-    def __init__(self, raw_request: str):
-        super(Request).__init__(raw_request)
+    def __init__(self, client: Client, raw_request: str):
+        super(Request).__init__(client, raw_request)
 
         split = self.raw_request.split(":")
         if len(split) != 3:
@@ -40,21 +36,23 @@ class Authentication(Request):
         self.username = split[1]
         self.password = split[2]
 
-    def is_of_type(self, to_match: str):
+    @staticmethod
+    def is_of_type(to_match: str):
         return to_match.startswith("AUTH:")
 
 
 class ListUsers(Request):
-    def __init__(self, raw_request: str):
-        super(Request).__init__(raw_request)
+    def __init__(self, client: Client, raw_request: str):
+        super(Request).__init__(client, raw_request)
 
-    def is_of_type(self, to_match: str):
+    @staticmethod
+    def is_of_type(to_match: str):
         return to_match == "LIST"
 
 
 class SendMessage(Request):
-    def __init__(self, raw_request: str):
-        super(Request).__init__(raw_request)
+    def __init__(self, client: Client, raw_request: str):
+        super(Request).__init__(client, raw_request)
 
         split = self.raw_request.split(":")
         if len(split) != 3:
@@ -63,13 +61,24 @@ class SendMessage(Request):
         self.receiving_username = split[1]
         self.message = split[2]
 
-    def is_of_type(self, to_match: str):
+    @staticmethod
+    def is_of_type(to_match: str):
         return to_match.startswith("To:")
 
 
 class Logout(Request):
-    def __init__(self, raw_request: str):
-        super(Request).__init__(raw_request)
+    def __init__(self, client: Client, raw_request: str):
+        super(Request).__init__(client, raw_request)
 
-    def is_of_type(self, to_match: str):
+    @staticmethod
+    def is_of_type(to_match: str):
         return to_match == "BYE"
+
+
+class Unknown(Request):
+    def __init__(self, client: Client, raw_request: str):
+        super(Request).__init__(client, raw_request)
+
+    @staticmethod
+    def is_of_type(to_match: str):
+        return True

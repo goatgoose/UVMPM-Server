@@ -15,13 +15,13 @@ class UVMPMServer:
         self.listening_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listening_sock.bind((self.host, self.port))
 
-        self.sockets = {}  # fileno : socket
+        self.sockets = {}  # fileno : sock
         self.unauthorized_sockets = set()
         self.authorized_sockets = set()  # sockets
 
         self.authorized_clients = {}  # username : sock
 
-        self.data_to_send = {}  # socket : data
+        self.data_to_send = {}  # sock : data
 
         self.poller = select.poll()
         self.poller.register(self.listening_sock, select.POLLIN)

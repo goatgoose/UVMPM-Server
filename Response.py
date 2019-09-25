@@ -61,3 +61,17 @@ class UserMessage(Response):
 
     def _message(self):
         return "From:" + self.from_client + ":" + self.user_message
+
+
+class UserExists(Response):
+    def _message(self):
+        return "UNIQNO"
+
+
+class Info(Response):
+    def __init__(self, info):
+        self.info = info
+
+    def _message(self):
+        return "# " + self.info
+
