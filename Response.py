@@ -11,6 +11,7 @@ class Response:
     @property
     def message(self):
         message_ = self._message + "\n"
+        print(message_)
         return message_.encode("ascii")
 
 

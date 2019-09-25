@@ -9,6 +9,8 @@ from threading import Timer
 
 
 class ClientManager:
+    TIMEOUT = 120  # seconds
+
     def __init__(self):
         self.authorizer = Authorizer("auth_info.json")
 
@@ -61,8 +63,7 @@ class ClientManager:
     def remove_idle_clients_forever(self):
         now = time.time()
         for client in list(self.clients.values()):
-            print(now - client.last_interaction_time)
-            if now - client.last_interaction_time > 120:
+            if now - client.last_interaction_time > ClientManager.TIMEOUT:
                 self.remove_client(client)
                 print("removing", str(client), "due to inactivity")
 
