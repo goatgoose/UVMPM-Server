@@ -51,7 +51,6 @@ class ClientManager:
         self.sockets.pop(client.sock.fileno(), None)
         self.poller.unregister(client.sock.fileno())
 
-        client.sock.send(b'')
         client.sock.close()
 
         print(str(client), "disconnected.")
