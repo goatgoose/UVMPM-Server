@@ -22,7 +22,7 @@ class Client:
         self.state = State.AUTHORIZED
 
     def send_response(self, response: Response):
-        self.sock.send(response.message)
+        self.sock.sendall(response.message)
 
     def reset_interaction_timer(self):
         self.last_interaction_time = time.time()

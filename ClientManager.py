@@ -19,6 +19,8 @@ class ClientManager:
         self.clients: Dict[int, Client] = {}  # fileno : client
         self.authorized_clients: Dict[str, Client] = {}  # username : client
 
+        self.buffered_data: Dict[int, str] = {}  # fileno : data
+
         self.poller = select.poll()
 
         self.remove_idle_clients_forever()
