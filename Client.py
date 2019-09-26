@@ -23,7 +23,11 @@ class Client:
         self.state = State.AUTHORIZED
 
     def send_response(self, response: Response):
-        self.sock.send(response.message)
+        try:
+            self.sock.send(response.message)
+        except Exception:
+            # bad file descriptor
+            pass
 
     def reset_interaction_timer(self):
         self.last_interaction_time = time.time()
