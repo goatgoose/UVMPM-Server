@@ -7,6 +7,7 @@ from Response import Response, SignOff
 from RequestManager import RequestManager
 import time
 from threading import Timer
+from UVMPMException import InvalidRequestSyntax
 
 
 class ClientManager:
@@ -83,13 +84,19 @@ class ClientManager:
     def pop_buffered_requests(self, fileno: int):
         raw_messages = self.buffered_data.get(fileno)
         if not raw_messages:
-            return None
+            return []
+
+        client = self.clients.get(fileno)
 
         split = raw_messages.split("\n")
         raw_messages = split[:-1]
         requests = []
         for raw_message in raw_messages:
-            requests.append(self.request_manager.get_request(self.clients.get(fileno), raw_message))
+            try:
+                requests.append(self.request_manager.get_request(client, raw_message))
+            except InvalidRequestSyntax:
+                self.remove_client(client)
+                return []
 
         self.buffered_data[fileno] = split[-1]
 
