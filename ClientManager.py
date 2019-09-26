@@ -68,7 +68,6 @@ class ClientManager:
     def remove_idle_clients_forever(self):
         now = time.time()
         for client in list(self.clients.values()):
-            print(now - client.last_interaction_time)
             if now - client.last_interaction_time > ClientManager.TIMEOUT:
                 self.remove_client(client)
                 self.broadcast(SignOff(client.username))
