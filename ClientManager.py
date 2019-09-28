@@ -56,7 +56,8 @@ class ClientManager:
             self.authorized_clients.pop(client.username, None)
         self.sockets.pop(client.sock.fileno(), None)
         self.buffered_data.pop(client.sock.fileno(), None)
-        self.poller.unregister(client.sock.fileno())
+        if client.sock.fileno() > -1:
+            self.poller.unregister(client.sock.fileno())
 
         client.sock.close()
 
